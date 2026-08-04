@@ -294,13 +294,11 @@ import_library(liquid_cache_velox
                /home/tenglei/code/liquid-cache-cpp/build_velox_gluten/libliquid_cache_velox.a)
 target_link_libraries(facebook::velox INTERFACE liquid_cache_core liquid_cache_velox)
 
-# fmt: velox_ep libvelox.a needs fmt 10.1 (v107 ABI), liquid_cache_core.a needs fmt 11.x (v117 ABI).
-# Both static libs are version-namespaced so they coexist in one shared object.
-import_library(fmt_velox
-               /home/tenglei/code/velox_ep_2026_02_06/_build/release/_deps/fmt-build/libfmt.a)
+# fmt: on the 2026_02_06 stack both velox_ep libvelox.a and liquid_cache_core.a
+# use the SYSTEM fmt 11.x (v117 ABI — velox resolve says "[fmt] Using SYSTEM fmt").
 import_library(fmt_liquid
                /home/tenglei/.local/lib/libfmt.a)
-target_link_libraries(facebook::velox INTERFACE fmt_velox fmt_liquid)
+target_link_libraries(facebook::velox INTERFACE fmt_liquid)
 
 # Compression: LiquidCache disk-cache code (transcoder_arrow/disk_cache_manager) references
 # LZ4 + ZSTD. Use the shared libs (system static .a is not -fPIC). import_library marks

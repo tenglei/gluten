@@ -108,8 +108,9 @@ object VeloxConfig extends ConfigRegistry {
 
   val COLUMNAR_VELOX_LIQUID_CACHE_ENABLED =
     buildStaticConf("spark.gluten.sql.columnar.backend.velox.liquidCacheEnabled")
-      .doc("Enable Liquid Cache for columnar reads. When disabled, falls through " +
-        "to native Velox Parquet reader.")
+      .doc(
+        "Enable Liquid Cache for columnar reads. When disabled, falls through " +
+          "to native Velox Parquet reader.")
       .booleanConf
       .createWithDefault(true)
 
