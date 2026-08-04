@@ -260,7 +260,8 @@ target_include_directories(
          ${CMAKE_CURRENT_SOURCE_DIR}
          ${VELOX_HOME}
          ${PROTO_OUTPUT_DIR}
-         ${PROTOBUF_INCLUDE})
+         ${PROTOBUF_INCLUDE}
+         /home/tenglei/code/liquid-cache-cpp/include)
 
 set_target_properties(velox PROPERTIES LIBRARY_OUTPUT_DIRECTORY
                                        ${root_directory}/releases)
@@ -285,6 +286,62 @@ target_link_libraries(velox PUBLIC gluten)
 
 # Requires VELOX_MONO_LIBRARY=ON when building Velox.
 import_library(facebook::velox ${VELOX_BUILD_PATH}/lib/libvelox.a)
+
+# Liquid-cache: libvelox.a references liquid_cache:: symbols (U) defined here.
+import_library(liquid_cache_core
+               /home/tenglei/code/liquid-cache-cpp/build_velox_gluten/libliquid_cache_core.a)
+import_library(liquid_cache_velox
+               /home/tenglei/code/liquid-cache-cpp/build_velox_gluten/libliquid_cache_velox.a)
+target_link_libraries(facebook::velox INTERFACE liquid_cache_core liquid_cache_velox)
+
+# fmt: velox_ep libvelox.a needs fmt 10.1 (v107 ABI), liquid_cache_core.a needs fmt 11.x (v117 ABI).
+# Both static libs are version-namespaced so they coexist in one shared object.
+import_library(fmt_velox
+               /home/tenglei/code/velox_ep_2026_02_06/_build/release/_deps/fmt-build/libfmt.a)
+import_library(fmt_liquid
+               /home/tenglei/.local/lib/libfmt.a)
+target_link_libraries(facebook::velox INTERFACE fmt_velox fmt_liquid)
+
+# Compression: LiquidCache disk-cache code (transcoder_arrow/disk_cache_manager) references
+# LZ4 + ZSTD. Use the shared libs (system static .a is not -fPIC). import_library marks
+# STATIC IMPORTED which mis-resolves .so sonames; use SHARED IMPORTED for shared libs.
+macro(import_shared_lib TARGET_NAME LIB_PATH)
+  if(NOT EXISTS ${LIB_PATH})
+    message(FATAL_ERROR "Library does not exist: ${LIB_PATH}")
+  endif()
+  add_library(${TARGET_NAME} SHARED IMPORTED)
+  set_target_properties(${TARGET_NAME} PROPERTIES IMPORTED_LOCATION ${LIB_PATH})
+endmacro()
+import_shared_lib(lz4_liquid /usr/lib/x86_64-linux-gnu/liblz4.so)
+import_shared_lib(zstd_liquid /usr/lib/x86_64-linux-gnu/libzstd.so)
+target_link_libraries(facebook::velox INTERFACE lz4_liquid zstd_liquid)
+
+# liquid_cache + velox also reference snappy / openssl (ssl, crypto) which the
+# reconfigure no longer pulls transitively. Link the system shared libs.
+import_shared_lib(snappy_liquid /usr/lib/x86_64-linux-gnu/libsnappy.so)
+import_shared_lib(ssl_liquid /usr/lib/x86_64-linux-gnu/libssl.so)
+import_shared_lib(crypto_liquid /usr/lib/x86_64-linux-gnu/libcrypto.so)
+target_link_libraries(facebook::velox INTERFACE snappy_liquid ssl_liquid crypto_liquid)
+
+# liquid_cache / velox also reference bzip2 (BZ2_*), xxhash (XXH64), libunwind
+# (_ULx86_64_*). Link the system shared libs.
+import_shared_lib(bz2_velox /usr/lib/x86_64-linux-gnu/libbz2.so)
+import_shared_lib(xxhash_velox /usr/lib/x86_64-linux-gnu/libxxhash.so)
+import_shared_lib(unwind_velox /usr/lib/x86_64-linux-gnu/libunwind.so)
+target_link_libraries(facebook::velox INTERFACE bz2_velox xxhash_velox unwind_velox)
+
+# velox_ep libvelox.a references parquet (arrow), thrift, libevent, double-conversion.
+# Use the STATIC parquet/arrow to match the already-linked static libarrow.a (shared
+# .so conflicts — its arrow:: symbols aren't exported from this .so).
+import_library(parquet_velox /home/tenglei/code/velox_ep_2026_02_06/_build/release/CMake/resolve_dependency_modules/arrow/arrow_ep/install/lib/libparquet.a)
+# libparquet.a references arrow:: symbols from libarrow.a, but Gluten links libarrow.a
+# BEFORE libparquet.a (via Arrow::arrow), so the reverse refs go unsatisfied. Re-link
+# libarrow.a after parquet to resolve them (static libs resolve left-to-right).
+import_library(arrow_after_parquet /home/tenglei/code/velox_ep_2026_02_06/_build/release/CMake/resolve_dependency_modules/arrow/arrow_ep/install/lib/libarrow.a)
+import_shared_lib(thrift_velox /usr/lib/x86_64-linux-gnu/libthrift.so)
+import_shared_lib(event_velox /usr/lib/x86_64-linux-gnu/libevent.so)
+import_shared_lib(doubleconv_velox /usr/lib/x86_64-linux-gnu/libdouble-conversion.so)
+target_link_libraries(facebook::velox INTERFACE parquet_velox arrow_after_parquet thrift_velox event_velox doubleconv_velox)
 
 if(BUILD_TESTS)
   add_duckdb()

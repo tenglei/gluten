@@ -250,6 +250,13 @@ VeloxMemoryManager::VeloxMemoryManager(
       facebook::velox::memory::MemoryReclaimer::create());
 
   veloxLeafPool_ = veloxAggregatePool_->addLeafChild("default_leaf");
+
+  // Force JNI class init on main thread so native threads don't crash in
+  // FindClass -> GetMethodID(NULL) for ReservationListener.reserve/unreserve.
+  // A +/-1 dummy pass initializes the static jmethodID/jclass refs while the
+  // calling thread still has the application classloader.
+  listener_->allocationChanged(1);
+  listener_->allocationChanged(-1);
 }
 
 namespace {

@@ -105,6 +105,16 @@ const uint64_t kVeloxMemReclaimMaxWaitMsDefault = 3600000; // 60min
 const std::string kHiveConnectorId = "test-hive";
 const std::string kVeloxCacheEnabled = "spark.gluten.sql.columnar.backend.velox.cacheEnabled";
 
+// liquid cache
+const std::string kVeloxLiquidCacheEnabled = "spark.gluten.sql.columnar.backend.velox.liquidCacheEnabled";
+const bool kVeloxLiquidCacheEnabledDefault = true;
+const std::string kVeloxLiquidCacheDir = "spark.gluten.sql.columnar.backend.velox.liquidCacheDir";
+const std::string kVeloxLiquidCacheDirDefault = "/tmp/liquid_cache";
+const std::string kVeloxLiquidCacheMemoryCapacity = "spark.gluten.sql.columnar.backend.velox.liquidCacheMemoryCapacity";
+const uint64_t kVeloxLiquidCacheMemoryCapacityDefault = 4294967296; // 4G
+const std::string kVeloxLiquidCacheStreamingRead = "spark.gluten.sql.columnar.backend.velox.liquidCacheStreamingRead";
+const bool kVeloxLiquidCacheStreamingReadDefault = true;
+
 const std::string kExprMaxCompiledRegexes = "spark.gluten.sql.columnar.backend.velox.maxCompiledRegexes";
 
 // memory cache

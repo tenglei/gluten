@@ -232,6 +232,33 @@ target_link_libraries(gluten PUBLIC Arrow::arrow
                                     Arrow::arrow_bundled_dependencies)
 target_link_libraries(gluten PRIVATE google::glog)
 
+# liquid_cache references curl + absl; link the system shared libs (resolved at
+# runtime via LD_PRELOAD — see scripts/run_spark_gluten.sh).
+add_library(curl_gluten SHARED IMPORTED)
+set_target_properties(curl_gluten PROPERTIES IMPORTED_LOCATION /usr/lib/x86_64-linux-gnu/libcurl.so)
+target_link_libraries(gluten PRIVATE curl_gluten)
+# Arrow bundled-deps + liquid_cache reference lz4/zstd; link the shared libs.
+add_library(lz4_gluten SHARED IMPORTED)
+set_target_properties(lz4_gluten PROPERTIES IMPORTED_LOCATION /usr/lib/x86_64-linux-gnu/liblz4.so)
+add_library(zstd_gluten SHARED IMPORTED)
+set_target_properties(zstd_gluten PROPERTIES IMPORTED_LOCATION /usr/lib/x86_64-linux-gnu/libzstd.so)
+target_link_libraries(gluten PRIVATE lz4_gluten zstd_gluten)
+# Arrow bundled-deps + liquid_cache reference re2; link the shared lib.
+add_library(re2_gluten SHARED IMPORTED)
+set_target_properties(re2_gluten PROPERTIES IMPORTED_LOCATION /usr/lib/x86_64-linux-gnu/libre2.so)
+target_link_libraries(gluten PRIVATE re2_gluten)
+# Arrow bundled-deps + liquid_cache reference snappy; link the shared lib.
+add_library(snappy_gluten SHARED IMPORTED)
+set_target_properties(snappy_gluten PROPERTIES IMPORTED_LOCATION /usr/lib/x86_64-linux-gnu/libsnappy.so)
+target_link_libraries(gluten PRIVATE snappy_gluten)
+file(GLOB ABSL_LIBS "/usr/lib/x86_64-linux-gnu/libabsl_*.so")
+foreach(absl_lib ${ABSL_LIBS})
+  get_filename_component(absl_name ${absl_lib} NAME_WE)
+  add_library(${absl_name}_gluten SHARED IMPORTED)
+  set_target_properties(${absl_name}_gluten PROPERTIES IMPORTED_LOCATION ${absl_lib})
+  target_link_libraries(gluten PRIVATE ${absl_name}_gluten)
+endforeach()
+
 install(TARGETS gluten DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/resources/libhdfs.so
         DESTINATION ${LIBHDFS3_DESTINATION})

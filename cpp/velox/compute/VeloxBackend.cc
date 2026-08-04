@@ -53,6 +53,8 @@
 #include "velox/connectors/hive/storage_adapters/hdfs/HdfsFileSystem.h"
 #include "velox/connectors/hive/storage_adapters/hdfs/RegisterHdfsFileSystem.h" // @manual
 #include "velox/connectors/hive/storage_adapters/s3fs/RegisterS3FileSystem.h" // @manual
+#include "velox/cache/LiquidCacheReader.h"
+#include "velox/cache/LiquidCacheRegistry.h"
 #include "velox/dwio/orc/reader/OrcReader.h"
 #include "velox/dwio/parquet/RegisterParquetReader.h"
 #include "velox/dwio/parquet/RegisterParquetWriter.h"
@@ -230,6 +232,26 @@ void VeloxBackend::init(
   // after the memory manager instanced
   initCache();
 
+  // Initialize LiquidCache reader if enabled.
+  if (backendConf_->get<bool>(kVeloxLiquidCacheEnabled, kVeloxLiquidCacheEnabledDefault)) {
+    auto& sysRoot = facebook::velox::memory::MemoryManager::getInstance()->deprecatedSysRootPool();
+    // to_velox (called inside readSplit) does AlignedBuffer::allocate on this pool,
+    // which requires a LEAF pool — sysRoot is an aggregate root and rejects allocations.
+    // Derive a leaf child whose lifetime matches the process (the reader is registered
+    // once and never released).
+    static auto liquidCachePool = sysRoot.addLeafChild("liquid_cache");
+    LiquidCacheReaderConfig config;
+    config.enabled = true;
+    config.cacheDir = backendConf_->get<std::string>(kVeloxLiquidCacheDir, kVeloxLiquidCacheDirDefault);
+    config.memoryCapacity = backendConf_->get<uint64_t>(kVeloxLiquidCacheMemoryCapacity, kVeloxLiquidCacheMemoryCapacityDefault);
+    config.useStreamingRead = backendConf_->get<bool>(kVeloxLiquidCacheStreamingRead, kVeloxLiquidCacheStreamingReadDefault);
+    auto reader = std::make_shared<LiquidCacheReader>(config, liquidCachePool.get());
+    LiquidCacheRegistry::registerReader(reader);
+    LOG(INFO) << "LiquidCache reader registered (enabled=" << config.enabled
+              << ", cacheDir=" << config.cacheDir
+              << ", memoryCapacity=" << config.memoryCapacity << ")";
+  }
+
   registerShuffleDictionaryWriterFactory([](MemoryManager* memoryManager, arrow::util::Codec* codec) {
     return std::make_unique<ArrowShuffleDictionaryWriter>(memoryManager, codec);
   });
@@ -367,6 +389,14 @@ void VeloxBackend::tearDown() {
   // On threads exit, thread local variables can be constructed with referencing global variables.
   // So, we need to destruct IOThreadPoolExecutor and stop the threads before global variables get destructed.
   ioExecutor_.reset();
+
+  // Stop liquid cache background transcode threads BEFORE destroying the
+  // Velox MemoryManager (and its allocator). The static writeExecutor_
+  // outlives any single LiquidCacheReader instance, so it must be stopped
+  // explicitly here; otherwise background tasks may crash with a dangling
+  // allocator pointer (MemoryPoolImpl::sizeClasses use-after-free).
+  LiquidCacheReader::shutdown();
+
   globalMemoryManager_.reset();
 
   // dump cache stats on exit if enabled

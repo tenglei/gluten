@@ -108,6 +108,7 @@ set(KNOWN_WARNINGS
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   set(KNOWN_WARNINGS "-Wno-error=unused-but-set-variable \
+      -Wno-error=overloaded-virtual \
       ${KNOWN_WARNINGS}")
   if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 11)
     set(KNOWN_WARNINGS "-Wno-error=maybe-uninitialized \

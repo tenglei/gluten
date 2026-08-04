@@ -106,6 +106,19 @@ object VeloxConfig extends ConfigRegistry {
       .booleanConf
       .createWithDefault(false)
 
+  val COLUMNAR_VELOX_LIQUID_CACHE_ENABLED =
+    buildStaticConf("spark.gluten.sql.columnar.backend.velox.liquidCacheEnabled")
+      .doc("Enable Liquid Cache for columnar reads. When disabled, falls through " +
+        "to native Velox Parquet reader.")
+      .booleanConf
+      .createWithDefault(true)
+
+  val COLUMNAR_VELOX_LIQUID_CACHE_DIR =
+    buildStaticConf("spark.gluten.sql.columnar.backend.velox.liquidCacheDir")
+      .doc("Directory for Liquid Cache disk storage. Must exist and be writable.")
+      .stringConf
+      .createWithDefault("/tmp/liquid_cache")
+
   val COLUMNAR_VELOX_MEM_CACHE_SIZE =
     buildStaticConf("spark.gluten.sql.columnar.backend.velox.memCacheSize")
       .doc("The memory cache size")
