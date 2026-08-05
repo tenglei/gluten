@@ -112,8 +112,6 @@ const std::string kVeloxLiquidCacheDir = "spark.gluten.sql.columnar.backend.velo
 const std::string kVeloxLiquidCacheDirDefault = "/tmp/liquid_cache";
 const std::string kVeloxLiquidCacheMemoryCapacity = "spark.gluten.sql.columnar.backend.velox.liquidCacheMemoryCapacity";
 const uint64_t kVeloxLiquidCacheMemoryCapacityDefault = 4294967296; // 4G
-const std::string kVeloxLiquidCacheStreamingRead = "spark.gluten.sql.columnar.backend.velox.liquidCacheStreamingRead";
-const bool kVeloxLiquidCacheStreamingReadDefault = true;
 
 const std::string kExprMaxCompiledRegexes = "spark.gluten.sql.columnar.backend.velox.maxCompiledRegexes";
 

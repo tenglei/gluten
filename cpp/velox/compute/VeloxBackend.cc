@@ -244,7 +244,6 @@ void VeloxBackend::init(
     config.enabled = true;
     config.cacheDir = backendConf_->get<std::string>(kVeloxLiquidCacheDir, kVeloxLiquidCacheDirDefault);
     config.memoryCapacity = backendConf_->get<uint64_t>(kVeloxLiquidCacheMemoryCapacity, kVeloxLiquidCacheMemoryCapacityDefault);
-    config.useStreamingRead = backendConf_->get<bool>(kVeloxLiquidCacheStreamingRead, kVeloxLiquidCacheStreamingReadDefault);
     auto reader = std::make_shared<LiquidCacheReader>(config, liquidCachePool.get());
     LiquidCacheRegistry::registerReader(reader);
     LOG(INFO) << "LiquidCache reader registered (enabled=" << config.enabled

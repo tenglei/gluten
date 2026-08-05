@@ -120,6 +120,15 @@ object VeloxConfig extends ConfigRegistry {
       .stringConf
       .createWithDefault("/tmp/liquid_cache")
 
+  // Registered so values like "4g" are normalized to bytes before being
+  // passed through to the native side (unregistered keys pass through
+  // verbatim and ConfigBase.get<uint64_t> would reject them).
+  val COLUMNAR_VELOX_LIQUID_CACHE_MEMORY_CAPACITY =
+    buildStaticConf("spark.gluten.sql.columnar.backend.velox.liquidCacheMemoryCapacity")
+      .doc("Memory budget in bytes for the Liquid Cache in-memory tier.")
+      .bytesConf(ByteUnit.BYTE)
+      .createWithDefaultString("4GB")
+
   val COLUMNAR_VELOX_MEM_CACHE_SIZE =
     buildStaticConf("spark.gluten.sql.columnar.backend.velox.memCacheSize")
       .doc("The memory cache size")
