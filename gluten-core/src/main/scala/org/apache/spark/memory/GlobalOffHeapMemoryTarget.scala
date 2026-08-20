@@ -112,6 +112,21 @@ class GlobalOffHeapMemoryTarget private[memory]
   private[memory] def memoryManagerOption(): Option[MemoryManager] = {
     val env = SparkEnv.get
     if (env != null) {
+      // Spark 4.0 compat (liquid-cache spark40 bring-up): SparkEnv's
+      // _memoryManager is a var assigned by initializeMemoryManager AFTER
+      // BlockManager exists; during the SparkContext-construction window —
+      // which is exactly where backend init fires its first borrow — it is
+      // still null, and forcing memoryStore init then NPEs inside
+      // MemoryStore.maxMemory. Degrade to None: the borrow becomes a
+      // recorded no-op (same as the no-SparkEnv path); post-init borrows
+      // are unaffected. On 3.5.x env.memoryManager is already non-null at
+      // this point, so behavior there is unchanged.
+      if (env.memoryManager == null) {
+        logWarning(
+          "Memory manager not initialized yet (Spark 4.0 init window); " +
+            "skipping off-heap borrow accounting for this call")
+        return None
+      }
       // SPARK-46947: https://github.com/apache/spark/pull/45052.
       ensureMemoryStoreInitialized(env)
       return Some(env.memoryManager)
