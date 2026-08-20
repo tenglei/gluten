@@ -241,7 +241,6 @@ void VeloxBackend::init(
     // once and never released).
     static auto liquidCachePool = sysRoot.addLeafChild("liquid_cache");
     LiquidCacheReaderConfig config;
-    config.enabled = true;
     config.cacheDir = backendConf_->get<std::string>(kVeloxLiquidCacheDir, kVeloxLiquidCacheDirDefault);
     config.memoryCapacity = backendConf_->get<uint64_t>(kVeloxLiquidCacheMemoryCapacity, kVeloxLiquidCacheMemoryCapacityDefault);
     auto reader = std::make_shared<LiquidCacheReader>(config, liquidCachePool.get());
