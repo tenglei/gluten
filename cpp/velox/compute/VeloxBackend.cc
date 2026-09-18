@@ -243,6 +243,16 @@ void VeloxBackend::init(
     LiquidCacheReaderConfig config;
     config.cacheDir = backendConf_->get<std::string>(kVeloxLiquidCacheDir, kVeloxLiquidCacheDirDefault);
     config.memoryCapacity = backendConf_->get<uint64_t>(kVeloxLiquidCacheMemoryCapacity, kVeloxLiquidCacheMemoryCapacityDefault);
+    // Transcode-OOM retry knobs (2026-09-18) — bounded retry for transcodes
+    // aborted on transient MEM_ALLOC_ERROR instead of attempted-terminal.
+    config.transcodeOomRetryEnabled = backendConf_->get<bool>(
+        kVeloxLiquidCacheTranscodeOomRetryEnabled, kVeloxLiquidCacheTranscodeOomRetryEnabledDefault);
+    config.transcodeOomMaxRetries = backendConf_->get<int32_t>(
+        kVeloxLiquidCacheTranscodeOomMaxRetries, kVeloxLiquidCacheTranscodeOomMaxRetriesDefault);
+    config.transcodeOomRetryCooldownMs = backendConf_->get<int64_t>(
+        kVeloxLiquidCacheTranscodeOomRetryCooldownMs, kVeloxLiquidCacheTranscodeOomRetryCooldownMsDefault);
+    config.transcodeOomRetryHeadroomFraction = backendConf_->get<double>(
+        kVeloxLiquidCacheTranscodeOomRetryHeadroomFraction, kVeloxLiquidCacheTranscodeOomRetryHeadroomFractionDefault);
     auto reader = std::make_shared<LiquidCacheReader>(config, liquidCachePool.get());
     LiquidCacheRegistry::registerReader(reader);
     LOG(INFO) << "LiquidCache reader registered (enabled=" << config.enabled

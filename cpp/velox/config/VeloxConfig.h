@@ -112,6 +112,17 @@ const std::string kVeloxLiquidCacheDir = "spark.gluten.sql.columnar.backend.velo
 const std::string kVeloxLiquidCacheDirDefault = "/tmp/liquid_cache";
 const std::string kVeloxLiquidCacheMemoryCapacity = "spark.gluten.sql.columnar.backend.velox.liquidCacheMemoryCapacity";
 const uint64_t kVeloxLiquidCacheMemoryCapacityDefault = 4294967296; // 4G
+// Transcode-OOM retry (2026-09-18): bounded retry for transcodes aborted on
+// Velox MEM_ALLOC_ERROR (transient global-allocator pressure) instead of
+// attempted-terminal. See LiquidCacheReaderConfig in velox.
+const std::string kVeloxLiquidCacheTranscodeOomRetryEnabled = "spark.gluten.sql.columnar.backend.velox.liquidCacheTranscodeOomRetryEnabled";
+const bool kVeloxLiquidCacheTranscodeOomRetryEnabledDefault = true;
+const std::string kVeloxLiquidCacheTranscodeOomMaxRetries = "spark.gluten.sql.columnar.backend.velox.liquidCacheTranscodeOomMaxRetries";
+const int32_t kVeloxLiquidCacheTranscodeOomMaxRetriesDefault = 3;
+const std::string kVeloxLiquidCacheTranscodeOomRetryCooldownMs = "spark.gluten.sql.columnar.backend.velox.liquidCacheTranscodeOomRetryCooldownMs";
+const int64_t kVeloxLiquidCacheTranscodeOomRetryCooldownMsDefault = 60000;
+const std::string kVeloxLiquidCacheTranscodeOomRetryHeadroomFraction = "spark.gluten.sql.columnar.backend.velox.liquidCacheTranscodeOomRetryHeadroomFraction";
+const double kVeloxLiquidCacheTranscodeOomRetryHeadroomFractionDefault = 0.5;
 
 const std::string kExprMaxCompiledRegexes = "spark.gluten.sql.columnar.backend.velox.maxCompiledRegexes";
 
